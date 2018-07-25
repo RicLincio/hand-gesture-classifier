@@ -8,4 +8,4 @@ There are 3 different classes representing the following poses:
 2. 'fist'
 3. 'ok'
 
-Note: data folder is missing. Contact me for dataset and calibration data.
+Note: 'dataset_hand.mat' file is missing because too large (exceeding 100 MB). The code still runs if avoiding to execute "prepare training set" section (training and validation sets are already provided).
