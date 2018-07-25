@@ -7,3 +7,5 @@ There are 3 different classes representing the following poses:
 1. 'hi'
 2. 'fist'
 3. 'ok'
+
+Note: data folder is missing. Contact me for dataset and calibration data.
