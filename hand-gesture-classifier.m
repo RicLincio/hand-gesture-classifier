@@ -5,46 +5,43 @@
 % generate the RGBD data to be processed by the classifier.
 
 clear; close all; clc;
-addpath('data')
 addpath('functions')
 
 %% prepare training set
 % with 3 channels: (gray, depth, ~)
 
 % load data
-clear
-load data\dataset_hand
+load(fullfile('data','dataset_hand'))
 % process data
 trainSet = DIBRtrain;
 trainLabel = trainLabel;
 valSet = DIBRtest;
 valLabel = testLabel;
 % store data
-save data\training_set trainSet trainLabel
-save data\validation_set valSet valLabel
+save(fullfile('data','training_set'),'trainSet','trainLabel')
+save(fullfile('data','validation_set'),'valSet','valLabel')
 
 %% prepare test set
 % from stereo images to 3 channels: (gray, depth, ~)
 
 % load data
 clear
-load calib_data;
+load(fullfile('data','calib_data'));
 num_images = 9;
 [imleft, imright] = importImages('stereo_images', 1080, 1920, num_images);
-fixImage8
 % process data
 testSet = processStereoImages(imleft, imright, stereoParams);
 testLabel = [1,1,1,1,2,2,2,3,3];
 % store data
-save data\test_set testSet testLabel
+save(fullfile('data','test_set'),'testSet','testLabel')
 
 %% train the cnn model
 
 % load training and test sets
 clear; close all
-load training_set.mat                                                      % size 28 x 28 x 4 x 8370
-load validation_set.mat                                                    % size 28 x 28 x 4 x 1440
-load test_set                                                              % size 28 x 28 x 4 x 9
+load(fullfile('data','training_set.mat'))                                  % size 28 x 28 x 4 x 8370
+load(fullfile('data','validation_set.mat'))                                % size 28 x 28 x 4 x 1440
+load(fullfile('data','test_set'))                                          % size 28 x 28 x 4 x 9
 % prepare training and test sets
 trainSet = prepareSet(trainSet);
 trainLabel = categorical(trainLabel);
