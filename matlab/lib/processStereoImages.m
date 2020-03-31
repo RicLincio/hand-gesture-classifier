@@ -1,10 +1,8 @@
+function out = processStereoImages(imleft, imright, stereoParams, displayFigures)
 % From stereo images compute the disparity map and reconstruct the geometry
 % of the scene. Select then the hand points, with the correspondent depth,
 % and create an RGBD array.
 
-function out = processStereoImages(imleft, imright, stereoParams)
-
-displayFigures = false;
 out = zeros(28, 28, 4, 9);
 
 for i = 1:size(imleft, 4)

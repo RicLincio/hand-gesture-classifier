@@ -1,11 +1,10 @@
+function out = prepareSet(in)
 % Turn a a set of images with 4 channels, containing RGBD information, into
-% a similar matrix with only 3 channels, where the wirst one has black and
+% a similar matrix with only 3 channels, where the first one has black and
 % white images, the second the relative depth map, while the third is left
 % unused.
 % Input: a 4D array of size (height x width x 4 x num_images)
 % Output: a 3D array of size (height x width x 3 x num_images)
-
-function out = prepareSet(in)
 
 % get input size and shape output
 [height, width, ~, num_images] = size(in);
