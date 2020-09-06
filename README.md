@@ -1,4 +1,4 @@
-# hand-gesture-classifier
+# hand-pose-classifier
 Hand pose detection.
 
 Data is acquired using RGBD sensors for the training set and stereo images for the test set.
