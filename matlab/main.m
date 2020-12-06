@@ -5,7 +5,6 @@
 % generate the RGBD data to be processed by the classifier.
 
 clear; close all; clc;
-execEnv = 'gpu';
 addpath lib
 
 %% training data
@@ -18,7 +17,7 @@ load(fullfile('..','data','validation_set'))                               % siz
 
 % matlab supports 1 or 3 channel images, use (gray, depth, ~)
 trainSet = prepareSet(trainSet);                                           % size 28 x 28 x 3 x 8370
-trainLabel = categorical(trainLabel,[1,2,3],{'five' 'fist' 'ok'});                                      % size 28 x 28 x 3 x 1440
+trainLabel = categorical(trainLabel,[1,2,3],{'five' 'fist' 'ok'});         % size 28 x 28 x 3 x 1440
 valSet = prepareSet(valSet);
 valLabel = categorical(valLabel,[1,2,3],{'five' 'fist' 'ok'});
 
@@ -73,7 +72,7 @@ options = trainingOptions('sgdm', ...
     'ValidationFrequency', params.validationFrequency, ...
     'VerboseFrequency', params.validationFrequency, ...
     'LearnRateSchedule','piecewise', ...
-    'LearnRateDropPeriod',1, ...
+    'LearnRateDropPeriod',4, ...
     'LearnRateDropFactor',0.5, ...
     'Verbose', true, ...                                                   % display messages
     'Plots', 'training-progress');                                         % display plots
@@ -121,7 +120,7 @@ legend('five','fist','ok')
 
 %% Inspect visually the network layers
 
-layer = 'full_1';
+layer = 'conv_1';
 channels = 1:64;
 
 I = deepDreamImage(net,layer,channels, ...
