@@ -1,4 +1,4 @@
-# hand-gesture-classifier
+# Hand pose classification
 Hand pose classification from RGBD image representation with deep learning models.
 
 Training set: RGBD frames obtained from "2.5D" sensor.
