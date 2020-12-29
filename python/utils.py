@@ -17,6 +17,9 @@ class HandDataset(torch.utils.data.Dataset):
         elif 'valSet' in data:
             self.features = np.float32(data['valSet'])
             self.labels = np.int64(data['valLabel'].squeeze()) - 1
+        elif 'testSet' in data:
+            self.features = np.float32(data['testSet'])
+            self.labels = np.int64(data['testLabel'].squeeze()) - 1
         self.classes = ('hi', 'fist', 'ok')
         self.transforms = transforms.ToTensor()
 
