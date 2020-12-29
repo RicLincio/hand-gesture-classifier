@@ -120,6 +120,84 @@ def accuracy(y_hat, y):
     return float(cmp.type(y.dtype).sum())
 
 
+def evaluate_accuracy(net, valid_iter, device=None):
+
+    if device is None:
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    valid_metric = Accumulator(2)  # num. samples; correct predictions.
+    # validation
+    net.eval()
+
+    for X, y in valid_iter:  # cycle on mini-batches
+
+        # move data to GPU if available
+        X, y = X.to(device), y.to(device)
+
+        # forward
+        y_hat = net(X)
+        
+        # accumulate batch statistics
+        valid_metric.add(
+            y.size().numel(),
+            accuracy(y_hat, y)
+        )
+
+    return valid_metric[1] / valid_metric[0]
+
+
+def train(net, n_epochs, train_iter, loss_function, optimizer, valid_iter=None):
+    
+    # Select best available device
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    net.to(device)
+    print(f"Training on device: {device}")
+
+    train_metric = Accumulator(3)  # num. samples; running loss; correct predictions.
+
+    for epoch in range(n_epochs):  # cycle on epochs
+
+        # training
+        net.train()
+        train_metric.reset()
+
+        for batch, (X, y) in enumerate(train_iter):  # cycle on mini-batches
+
+            # move data to GPU if available
+            X, y = X.to(device), y.to(device)
+
+            # reset the parameter gradients
+            optimizer.zero_grad()
+
+            # forward + backward + optimize
+            y_hat = net(X)
+            loss = loss_function(y_hat, y)
+            loss.backward()
+            optimizer.step()
+
+            # accumulate batch statistics
+            train_metric.add(
+                y.size().numel(),
+                loss.item(),
+                accuracy(y_hat, y)
+            )
+
+        # print epoch statistics (training)
+        print(f"epoch:{epoch:5}\tloss:{train_metric[1]/train_metric[0]:.3}\taccuracy:{train_metric[2]/train_metric[0]:.3}", end='')
+
+        if valid_iter is not None:
+
+            valid_accuracy = evaluate_accuracy(net, valid_iter, device)
+
+            # print epoch statistics (validation)
+            print(f"\tval-accuracy:{valid_accuracy:.3}")
+
+        else:
+            print("")
+
+
+
+
 if __name__ == '__main__':
 
     # Test accumulator class
