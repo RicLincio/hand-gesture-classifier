@@ -1,9 +1,13 @@
+import pathlib
 from matplotlib import pyplot as plt
 import numpy as np
 from random import randint
 from scipy import io
 import torch
+from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
+import torchvision
+
 
 # dataset
 class HandDataset(torch.utils.data.Dataset):
@@ -147,6 +151,13 @@ def evaluate_accuracy(net, valid_iter, device=None):
 
 
 def train(net, n_epochs, train_iter, loss_function, optimizer, valid_iter=None):
+
+    # setup tensorboard
+    writer = SummaryWriter(log_dir='runs')
+    images, labels = iter(train_iter).next()
+    img_grid = torchvision.utils.make_grid(images)
+    
+    writer.add_image('four_fashion_mnist_images', img_grid)
     
     # Select best available device
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -195,14 +206,30 @@ def train(net, n_epochs, train_iter, loss_function, optimizer, valid_iter=None):
         else:
             print("")
 
+        # log to tensorboard
+        writer.add_scalar('training_accuracy', train_metric[2]/train_metric[0], epoch)
+        writer.add_scalar('validation_accuracy', valid_accuracy, epoch)
+
+
 
 
 
 if __name__ == '__main__':
 
-    # Test accumulator class
-    metrics = Accumulator(2)
-    metrics.add(3,6)
-    assert metrics[0] / metrics[1] == 0.5
-    metrics.reset()
-    assert metrics[0] == metrics[1] == 0
+    DATA_PATH = pathlib.Path('../data')
+
+    writer = SummaryWriter('runs/softmax')
+
+    train_ds = HandDataset(DATA_PATH/'training_set.mat')
+    valid = HandDataset(DATA_PATH/'validation_set.mat')
+
+    net = SoftmaxRegression(n_inputs=np.prod(train_ds.sample_shape), n_outputs=len(train_ds.classes))
+
+    train_iter = torch.utils.data.DataLoader(train_ds, batch_size=8, shuffle=True)
+    valid_iter = torch.utils.data.DataLoader(valid, batch_size=8, shuffle=False)
+
+    loss_function = torch.nn.CrossEntropyLoss()
+    n_epochs, lr = 50, 0.05
+    optimizer = torch.optim.SGD(net.parameters(), lr=lr, momentum=0.5)
+
+    train_ds(net, n_epochs, train_iter, loss_function, optimizer, valid_iter)
