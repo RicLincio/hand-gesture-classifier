@@ -12,9 +12,8 @@ import torchvision
 # dataset
 class HandDataset(torch.utils.data.Dataset):
 
-    def __init__(self, file_name):
+    def __init__(self, file_name, rgb=True, depth=True):
         data = io.loadmat(file_name=str(file_name))
-        # TODO add support for validation set (different key values)
         if 'trainSet' in data:
             self.features = np.float32(data['trainSet'])
             self.labels = np.int64(data['trainLabel'].squeeze()) - 1
@@ -24,6 +23,15 @@ class HandDataset(torch.utils.data.Dataset):
         elif 'testSet' in data:
             self.features = np.float32(data['testSet'])
             self.labels = np.int64(data['testLabel'].squeeze()) - 1
+        if rgb and not depth:
+            self.features = self.features[:,:,:3,:]
+            self.channels = ['R', 'G', 'B']
+        elif not rgb and depth:
+            self.features = self.features[:,:,[3],:]  # [3] is used to preserve dimensions
+            self.channels = ['D']
+        elif rgb and depth:
+            self.channels = ['R', 'G', 'B', 'D']
+        else: raise Exception
         self.classes = ('hi', 'fist', 'ok')
         self.transforms = transforms.ToTensor()
 
@@ -43,12 +51,18 @@ class HandDataset(torch.utils.data.Dataset):
         index = randint(0, len(self.labels)) if index is None else index
         print(f"\nSample: {index}\nLabel: {self.classes[self.labels[index]]}")
         titles = ['R','G','B','D']
-        plt.figure(figsize=(10,40))
-        for i in range(4):
-            plt.subplot(1,4,i+1)
-            plt.imshow(self.features[:,:,i,index])
-            plt.title(titles[i])
+        if len(self.channels) == 1:
+            plt.figure(figsize=(10,10))
+            plt.imshow(self.features[:,:,0,index])
+            plt.title(self.channels[0])
             plt.axis('off')
+        else:
+            plt.figure(figsize=(10,40))
+            for i in range(self.sample_shape[2]):
+                plt.subplot(1,self.sample_shape[2],i+1)
+                plt.imshow(self.features[:,:,i,index])
+                plt.title(self.channels[i])
+                plt.axis('off')
         plt.show()
 
     @property
@@ -150,14 +164,14 @@ def evaluate_accuracy(net, valid_iter, device=None):
     return valid_metric[1] / valid_metric[0]
 
 
-def train(net, n_epochs, train_iter, loss_function, optimizer, valid_iter=None):
+def train(net, n_epochs, train_iter, loss_function, optimizer, valid_iter=None, log_dir='runs'):
 
     # setup tensorboard
-    writer = SummaryWriter(log_dir='runs')
+    writer = SummaryWriter(log_dir=log_dir)
     images, labels = iter(train_iter).next()
     img_grid = torchvision.utils.make_grid(images)
     
-    writer.add_image('four_fashion_mnist_images', img_grid)
+    # writer.add_image('four_fashion_mnist_images', img_grid)
     
     # Select best available device
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
