@@ -48,7 +48,7 @@ class HandDataset(torch.utils.data.Dataset):
         return f"{len(self.labels)} samples of shape {self.sample_shape}"
 
     def show_sample(self, index=None):
-        index = randint(0, len(self.labels)) if index is None else index
+        index = randint(0, len(self.labels)-1) if index is None else index
         print(f"\nSample: {index}\nLabel: {self.classes[self.labels[index]]}")
         titles = ['R','G','B','D']
         if len(self.channels) == 1:
