@@ -13,6 +13,11 @@ import torchvision
 class HandDataset(torch.utils.data.Dataset):
 
     def __init__(self, file_name, rgb=True, depth=True):
+        # Flags for channel selection.
+        assert rgb or depth, print('Select at least one source of information.')
+        self.rgb = rgb
+        self.depth = depth
+        # Read dataset.
         data = io.loadmat(file_name=str(file_name))
         if 'trainSet' in data:
             self.features = np.float32(data['trainSet'])
@@ -23,23 +28,16 @@ class HandDataset(torch.utils.data.Dataset):
         elif 'testSet' in data:
             self.features = np.float32(data['testSet'])
             self.labels = np.int64(data['testLabel'].squeeze()) - 1
-        if rgb and not depth:
-            self.features = self.features[:,:,:3,:]
-            self.channels = ['R', 'G', 'B']
-        elif not rgb and depth:
-            self.features = self.features[:,:,[3],:]  # [3] is used to preserve dimensions
-            self.channels = ['D']
-        elif rgb and depth:
-            self.channels = ['R', 'G', 'B', 'D']
-        else: raise Exception
+        # Labels information.
         self.classes = ('hi', 'fist', 'ok')
+        # Data augmentation.
         self.transforms = transforms.ToTensor()
 
     def __len__(self):
         return len(self.labels)
 
     def __getitem__(self, index):
-        return self.transforms(self.features[:,:,:,index]), torch.from_numpy(self.labels)[index]
+        return self.transforms(self.features[:,:,self.enabled_channels,index]), torch.from_numpy(self.labels)[index]
 
     def __repr__(self):
         return f"{len(self.labels)} samples of shape {self.sample_shape}"
@@ -50,24 +48,24 @@ class HandDataset(torch.utils.data.Dataset):
     def show_sample(self, index=None):
         index = randint(0, len(self.labels)-1) if index is None else index
         print(f"\nSample: {index}\nLabel: {self.classes[self.labels[index]]}")
-        titles = ['R','G','B','D']
-        if len(self.channels) == 1:
-            plt.figure(figsize=(10,10))
-            plt.imshow(self.features[:,:,0,index])
-            plt.title(self.channels[0])
-            plt.axis('off')
-        else:
-            plt.figure(figsize=(10,40))
-            for i in range(self.sample_shape[2]):
-                plt.subplot(1,self.sample_shape[2],i+1)
-                plt.imshow(self.features[:,:,i,index])
-                plt.title(self.channels[i])
-                plt.axis('off')
+        plt.figure(figsize=(3,6))
+        plt.subplot(1,2,1)
+        plt.imshow(self.features[:,:,:3,index])
+        plt.title('RGB')
+        plt.axis('off')
+        plt.subplot(1,2,2)
+        plt.imshow(self.features[:,:,3,index])
+        plt.title('Depth map')
+        plt.axis('off')
         plt.show()
 
     @property
     def sample_shape(self):
-        return self.features.shape[:-1]
+        return self.features[:,:,self.enabled_channels,:].shape[:-1]
+
+    @property
+    def enabled_channels(self):
+        return (self.rgb, self.rgb, self.rgb, self.depth)
 
 
 # models
@@ -171,7 +169,8 @@ def train(net, n_epochs, train_iter, loss_function, optimizer, valid_iter=None, 
     images, labels = iter(train_iter).next()
     img_grid = torchvision.utils.make_grid(images)
     
-    # writer.add_image('four_fashion_mnist_images', img_grid)
+    writer.add_image('images', img_grid)
+    writer.add_graph(net, images)
     
     # Select best available device
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -223,9 +222,6 @@ def train(net, n_epochs, train_iter, loss_function, optimizer, valid_iter=None, 
         # log to tensorboard
         writer.add_scalar('training_accuracy', train_metric[2]/train_metric[0], epoch)
         writer.add_scalar('validation_accuracy', valid_accuracy, epoch)
-
-
-
 
 
 if __name__ == '__main__':
